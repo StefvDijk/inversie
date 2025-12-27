@@ -15,16 +15,37 @@ from claude_agent_sdk.types import HookMatcher
 from security import bash_security_hook
 
 
-# Puppeteer MCP tools for browser automation
-PUPPETEER_TOOLS = [
-    "mcp__puppeteer__puppeteer_navigate",
-    "mcp__puppeteer__puppeteer_screenshot",
-    "mcp__puppeteer__puppeteer_click",
-    "mcp__puppeteer__puppeteer_fill",
-    "mcp__puppeteer__puppeteer_select",
-    "mcp__puppeteer__puppeteer_hover",
-    "mcp__puppeteer__puppeteer_evaluate",
-    "mcp__puppeteer__puppeteer_connect_active_tab"
+# Playwright MCP tools for browser automation
+PLAYWRIGHT_TOOLS = [
+    # Core navigation & screenshots
+    "mcp__playwright__browser_navigate",
+    "mcp__playwright__browser_navigate_back",
+    "mcp__playwright__browser_take_screenshot",
+    "mcp__playwright__browser_snapshot",
+
+    # Element interaction
+    "mcp__playwright__browser_click",
+    "mcp__playwright__browser_type",
+    "mcp__playwright__browser_fill_form",
+    "mcp__playwright__browser_select_option",
+    "mcp__playwright__browser_hover",
+    "mcp__playwright__browser_drag",
+    "mcp__playwright__browser_press_key",
+
+    # JavaScript & debugging
+    "mcp__playwright__browser_evaluate",
+    "mcp__playwright__browser_run_code",
+    "mcp__playwright__browser_console_messages",
+    "mcp__playwright__browser_network_requests",
+
+    # Browser management
+    "mcp__playwright__browser_close",
+    "mcp__playwright__browser_resize",
+    "mcp__playwright__browser_tabs",
+    "mcp__playwright__browser_wait_for",
+    "mcp__playwright__browser_handle_dialog",
+    "mcp__playwright__browser_file_upload",
+    "mcp__playwright__browser_install",
 ]
 
 # Built-in tools
@@ -80,8 +101,8 @@ def create_client(project_dir: Path, model: str):
                 # Bash permission granted here, but actual commands are validated
                 # by the bash_security_hook (see security.py for allowed commands)
                 "Bash(*)",
-                # Allow Puppeteer MCP tools for browser automation
-                *PUPPETEER_TOOLS,
+                # Allow Playwright MCP tools for browser automation
+                *PLAYWRIGHT_TOOLS,
             ],
         },
     }
@@ -98,7 +119,7 @@ def create_client(project_dir: Path, model: str):
     print("   - Sandbox enabled (OS-level bash isolation)")
     print(f"   - Filesystem restricted to: {project_dir.resolve()}")
     print("   - Bash commands restricted to allowlist (see security.py)")
-    print("   - MCP servers: puppeteer (browser automation)")
+    print("   - MCP servers: playwright (browser automation)")
     print("   - Project settings enabled (skills, commands, CLAUDE.md)")
     print()
 
@@ -107,13 +128,13 @@ def create_client(project_dir: Path, model: str):
             model=model,
             system_prompt="You are an expert full-stack developer building a production-quality web application.",
             setting_sources=["project"],  # Enable skills, commands, and CLAUDE.md from project dir
-            max_buffer_size=10 * 1024 * 1024,  # 10MB for large Puppeteer screenshots
+            max_buffer_size=10 * 1024 * 1024,  # 10MB for large Playwright screenshots
             allowed_tools=[
                 *BUILTIN_TOOLS,
-                *PUPPETEER_TOOLS,
+                *PLAYWRIGHT_TOOLS,
             ],
             mcp_servers={
-                "puppeteer": {"command": "npx", "args": ["puppeteer-mcp-server"]}
+                "playwright": {"command": "npx", "args": ["@playwright/mcp@latest", "--viewport-size", "1280x720"]},
             },
             hooks={
                 "PreToolUse": [

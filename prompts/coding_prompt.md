@@ -284,14 +284,40 @@ Before context fills up:
 
 Available tools:
 
-- puppeteer_navigate - Start browser and go to URL
-- puppeteer_screenshot - Capture screenshot
-- puppeteer_click - Click elements
-- puppeteer_fill - Fill form inputs
-- puppeteer_evaluate - Execute JavaScript (use sparingly, only for debugging)
+**Navigation & Screenshots:**
+- browser_navigate - Navigate to a URL
+- browser_navigate_back - Go back to previous page
+- browser_take_screenshot - Capture screenshot (use for visual verification)
+- browser_snapshot - Get accessibility tree snapshot (structured page data)
+
+**Element Interaction:**
+- browser_click - Click elements (has built-in auto-wait)
+- browser_type - Type text into editable elements
+- browser_fill_form - Fill multiple form fields at once
+- browser_select_option - Select dropdown options
+- browser_hover - Hover over elements
+- browser_drag - Drag and drop between elements
+- browser_press_key - Press keyboard keys
+
+**Debugging & Monitoring:**
+- browser_console_messages - Get browser console output (check for errors)
+- browser_network_requests - Monitor API calls and responses
+- browser_evaluate - Execute JavaScript (use sparingly)
+
+**Browser Management:**
+- browser_close - Close the browser
+- browser_resize - Resize browser window (use to test mobile: 375x667, tablet: 768x1024, desktop: 1280x720)
+- browser_tabs - Manage browser tabs
+- browser_wait_for - Wait for text/element/time
+- browser_handle_dialog - Handle alert/confirm dialogs
+- browser_file_upload - Upload files
+
+**Key Benefits:**
+- All interaction tools have **built-in auto-wait** - no manual timeouts needed
+- Use `browser_console_messages` to detect JavaScript errors
+- Use `browser_network_requests` to verify API calls succeed
 
 Test like a human user with mouse and keyboard. Don't take shortcuts by using JavaScript evaluation.
-Don't use the puppeteer "active tab" tool.
 
 ---
 
