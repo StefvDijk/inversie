@@ -179,9 +179,9 @@ def run_spec_creation(project_dir: Path) -> bool:
 
     try:
         # Launch Claude Code with /create-spec command
-        # Pass the project directory as a separate argument
+        # Project path included in command string so it populates $ARGUMENTS
         subprocess.run(
-            ["claude", "/create-spec", str(project_dir)],
+            ["claude", f"/create-spec {project_dir}"],
             check=False,  # Don't raise on non-zero exit
             cwd=str(Path(__file__).parent)  # Run from project root
         )
