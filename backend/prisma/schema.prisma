@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  type              UserType
+  email             String   @unique
+  pinHash           String
+  firstName         String
+  lastName          String
+  language          String   @default("nl")
+  biometricsEnabled Boolean  @default(false)
+  textSize          TextSize @default(MEDIUM)
+  highContrast      Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  potjes                 Potje[]
+  decisions              Decision[]
+  moneyRequests          MoneyRequest[]
+  transactions           Transaction[]
+  documents              Document[]
+  savingsGoals           SavingsGoal[]
+  surveyResponses        SurveyResponse[]
+  clientAppointments     Appointment[]           @relation("ClientAppointments")
+  bewindvoerderAppointments Appointment[]        @relation("BewindvoerderAppointments")
+  notifications          Notification[]
+  notificationPreferences NotificationPreference[]
+  clientRelations        ClientBewindvoerderRelation[] @relation("ClientRelations")
+  bewindvoerderRelations ClientBewindvoerderRelation[] @relation("BewindvoerderRelations")
+}
+
+model ClientBewindvoerderRelation {
+  id              String   @id @default(uuid())
+  clientId        String
+  bewindvoerderId String
+  createdAt       DateTime @default(now())
+
+  client        User @relation("ClientRelations", fields: [clientId], references: [id], onDelete: Cascade)
+  bewindvoerder User @relation("BewindvoerderRelations", fields: [bewindvoerderId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, bewindvoerderId])
+}
+
+model Potje {
+  id            String   @id @default(uuid())
+  clientId      String
+  name          String
+  icon          String?
+  monthlyBudget Float
+  currentSpent  Float    @default(0)
+  resetDay      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  client    User       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  decisions Decision[]
+}
+
+model Decision {
+  id                 String         @id @default(uuid())
+  clientId           String
+  title              String
+  description        String?
+  amount             Float
+  potjeId            String
+  status             RequestStatus  @default(PENDING)
+  needsHelp          Boolean        @default(false)
+  bewindvoerderMessage String?
+  approvedAt         DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  client     User        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  potje      Potje       @relation(fields: [potjeId], references: [id])
+  reflection Reflection?
+}
+
+model Reflection {
+  id                 String   @id @default(uuid())
+  decisionId         String   @unique
+  satisfactionRating Int
+  notes              String?
+  createdAt          DateTime @default(now())
+
+  decision Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+}
+
+model MoneyRequest {
+  id                   String        @id @default(uuid())
+  clientId             String
+  amount               Float
+  category             String
+  description          String?
+  photoUrl             String
+  status               RequestStatus @default(PENDING)
+  bewindvoerderMessage String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id           String   @id @default(uuid())
+  clientId     String
+  date         DateTime
+  description  String
+  amount       Float
+  category     String?
+  balanceAfter Float?
+  importedAt   DateTime @default(now())
+
+  client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id             String   @id @default(uuid())
+  clientId       String
+  originalImageUrl String
+  originalText   String?
+  simplifiedText String?
+  actionItems    String?  // JSON string
+  deadline       DateTime?
+  createdAt      DateTime @default(now())
+
+  client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model SavingsGoal {
+  id            String    @id @default(uuid())
+  clientId      String
+  name          String
+  targetAmount  Float
+  currentAmount Float     @default(0)
+  targetDate    DateTime?
+  imageUrl      String?
+  isCompleted   Boolean   @default(false)
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model SurveyResponse {
+  id          String     @id @default(uuid())
+  clientId    String
+  surveyType  SurveyType
+  responses   String     // JSON string
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+
+  client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id                 String            @id @default(uuid())
+  clientId           String
+  bewindvoerderId    String
+  appointmentType    AppointmentType
+  scheduledAt        DateTime
+  durationMinutes    Int               @default(30)
+  notes              String?
+  status             AppointmentStatus @default(PENDING)
+  externalCalendarId String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  client        User @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
+  bewindvoerder User @relation("BewindvoerderAppointments", fields: [bewindvoerderId], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      String?          // JSON string for deep linking
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationPreference {
+  id               String @id @default(uuid())
+  userId           String
+  notificationType String
+  enabled          Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationType])
+}
+
+enum UserType {
+  CLIENT
+  BEWINDVOERDER
+}
+
+enum TextSize {
+  SMALL
+  MEDIUM
+  LARGE
+  XLARGE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+enum AppointmentType {
+  IN_PERSON
+  PHONE
+  VIDEO
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum SurveyType {
+  INCLUSIEMETER
+  INCLUSIEF_BESLISSEN
+}
+
+enum NotificationType {
+  DECISION_APPROVED
+  DECISION_DENIED
+  MONEY_REQUEST_APPROVED
+  MONEY_REQUEST_DENIED
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_REMINDER
+  REFLECTION_PROMPT
+  SURVEY_REMINDER
+  BUDGET_WARNING
+}

@@ -1,0 +1,849 @@
+<project_specification>
+  <project_name>Inversie</project_name>
+
+  <overview>
+    Inversie is a revolutionary mobile-first app for the Dutch bewindvoering (financial guardianship) sector.
+    Instead of treating clients as passive recipients, the app empowers vulnerable individuals (including those
+    with mild intellectual disabilities - LVB) with autonomy, financial insight, and genuine connection to their
+    bewindvoerder. It functions as a "Real-time Life Coach" combining hard financial data with soft, pedagogical
+    functions like guided decision-making, reflection, and personal development tools.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>React Native (Expo)</framework>
+      <styling>NativeWind (TailwindCSS for React Native)</styling>
+      <state_management>Zustand</state_management>
+      <navigation>React Navigation</navigation>
+      <forms>React Hook Form</forms>
+    </frontend>
+    <backend>
+      <runtime>Node.js with Express</runtime>
+      <database>SQLite (development) / PostgreSQL (production)</database>
+      <orm>Prisma</orm>
+      <ai_integration>OpenAI API for document translation</ai_integration>
+      <calendar_integration>Google Calendar API, Microsoft Graph API</calendar_integration>
+    </backend>
+    <communication>
+      <api>REST API with JSON</api>
+      <push_notifications>Expo Push Notifications</push_notifications>
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 20+
+      - npm or yarn
+      - Expo CLI
+      - SQLite3
+      - OpenAI API key (for Lees Simpel feature)
+      - Google/Microsoft API credentials (for calendar integration)
+    </environment_setup>
+  </prerequisites>
+
+  <feature_count>190</feature_count>
+
+  <languages>
+    <supported>
+      - Dutch (nl) - Primary
+      - English (en)
+      - Arabic (ar)
+      - Turkish (tr)
+    </supported>
+    <default>Dutch (nl)</default>
+  </languages>
+
+  <user_types>
+    <client>
+      Primary user - individuals under financial guardianship. Often vulnerable or with LVB.
+      Uses mobile app for all interactions.
+    </client>
+    <bewindvoerder>
+      Financial guardian - receives notifications, approves requests, manages calendar.
+      Uses minimal interface (notifications + calendar integration). Actual financial
+      transactions are executed outside the app via banking systems.
+    </bewindvoerder>
+  </user_types>
+
+  <security_and_access_control>
+    <user_roles>
+      <role name="client">
+        <permissions>
+          - Can view own financial overview (potjes, transactions)
+          - Can start new decisions (Beslis-Protocol)
+          - Can submit money requests
+          - Can upload documents for AI translation
+          - Can view and book appointments
+          - Can complete Toolbox surveys
+          - Can set and track savings goals
+          - Can manage own profile and settings
+          - CANNOT see other clients' data
+          - CANNOT approve own requests
+          - CANNOT modify potje budgets
+        </permissions>
+        <protected_routes>
+          - /bewindvoerder/* (blocked)
+          - All routes require authentication
+        </protected_routes>
+      </role>
+      <role name="bewindvoerder">
+        <permissions>
+          - Can view assigned clients' data
+          - Can approve/deny decision requests
+          - Can approve/deny money requests
+          - Can set potje budgets for clients
+          - Can upload transaction CSVs
+          - Can view client survey results
+          - Can manage calendar availability
+          - CANNOT access other bewindvoerders' clients
+        </permissions>
+        <protected_routes>
+          - /bewindvoerder/* (bewindvoerder only)
+          - /client/* pages show different view
+        </protected_routes>
+      </role>
+    </user_roles>
+    <authentication>
+      <method>Biometrics (Face ID / Fingerprint) with PIN fallback</method>
+      <session_timeout>30 minutes of inactivity</session_timeout>
+      <pin_requirements>4-6 digits</pin_requirements>
+    </authentication>
+    <sensitive_operations>
+      - PIN required for changing profile settings
+      - Confirmation required before deleting saved documents
+      - Confirmation required before canceling appointment requests
+    </sensitive_operations>
+  </security_and_access_control>
+
+  <core_features>
+    <beslis_protocol>
+      The heart of the app - guided decision-making with reflection
+
+      FLOW:
+      1. Client starts "Nieuwe Keuze" (New Choice)
+      2. App asks: "Weet je hoe je er financieel voor staat?" (Do you know your financial situation?)
+      3. App shows current potje overview with available amounts
+      4. Client describes what they want (e.g., "Cambuur tickets")
+      5. App asks for amount and category
+      6. App shows IMPACT: "Als je dit doet, gaat het ten koste van [potje]. Wat wil je?"
+      7. Client selects which potje to use (or split between potjes)
+      8. App asks: "Heb je hulp nodig bij het kopen, of kan je dit zelf?"
+      9. Request submitted to bewindvoerder for approval
+      10. Bewindvoerder receives notification, approves in app, executes transfer in bank
+      11. Client receives approval notification
+      12. NEXT DAY: App sends reflection prompt: "Hoe kijk je erop terug? Was het het waard?"
+      13. Client rates satisfaction and optionally adds notes
+      14. Reflection stored for future reference and conversations with bewindvoerder
+
+      Features:
+      - View pending decisions
+      - View decision history with reflections
+      - Impact visualization (progress bars showing budget effect)
+      - Help request option (bewindvoerder can assist with purchase)
+    </beslis_protocol>
+
+    <potjes_system>
+      Virtual budget categories managed by bewindvoerder
+
+      Features:
+      - View all potjes with current balance and budget
+      - Visual progress bars (spent vs available)
+      - Categories typically include: Boodschappen, Kleding, Vervoer, Vrije tijd, Sparen, etc.
+      - Bewindvoerder sets monthly budgets
+      - Spending tracked against each potje
+      - Notifications when approaching budget limit
+      - Monthly reset (or rolling budget as configured)
+    </potjes_system>
+
+    <lees_simpel>
+      AI-powered document translation to simple language
+
+      Features:
+      - Take photo of letter/document (camera integration)
+      - Upload existing photo from gallery
+      - AI processes and extracts text (OCR)
+      - AI translates to "Jip-en-Janneke taal" (very simple Dutch)
+      - Shows: What does this letter mean? What should I do? When is the deadline?
+      - View original and simplified side by side
+      - Save translated documents for reference
+      - Option to share with bewindvoerder for help
+    </lees_simpel>
+
+    <geld_verzoek>
+      Money request with context
+
+      Features:
+      - Create new request form
+      - REQUIRED: Photo of product/service/price (camera or gallery)
+      - REQUIRED: Select category (potje)
+      - Add description/reason
+      - Submit to bewindvoerder
+      - View request status (pending, approved, denied)
+      - View request history
+      - Cancel pending request
+      - Receive notification when approved/denied
+      - If denied, see reason from bewindvoerder
+    </geld_verzoek>
+
+    <transacties>
+      Read-only transaction overview
+
+      Features:
+      - View all transactions (incoming and outgoing)
+      - Filter by date range
+      - Filter by category
+      - Search transactions
+      - View transaction details
+      - See running balance
+      - Transactions imported via CSV by bewindvoerder
+      - Clear categorization with icons
+      - Pull to refresh
+    </transacties>
+
+    <spaardoelen>
+      Visual savings goals
+
+      Features:
+      - View all savings goals
+      - Create new goal with:
+        - Name (e.g., "Vakantie", "Nieuwe TV")
+        - Target amount
+        - Target date (optional)
+        - Image/icon
+      - Visual progress tracking (progress bar, percentage)
+      - Bewindvoerder allocates actual savings
+      - Client can also set "virtual" tracking goals
+      - Celebrate when goal is reached (confetti animation!)
+      - Edit or delete goals
+    </spaardoelen>
+
+    <toolbox_surveys>
+      Periodic autonomy and wellbeing check-ins
+
+      INCLUSIEMETER survey includes:
+      - Do you need inclusive decision-making? (Yes/No)
+      - How often do you need it? (Multiple choice)
+      - Do you feel involved in decisions? (Scale 1-5)
+      - Are sufficient options available? (Yes/No)
+      - Does your guardian let you make enough decisions? (Yes/No)
+      - Can you understand your guardian well? (Yes/No)
+      - Life satisfaction across 8 domains (1-5 scale each):
+        * Physical health
+        * Mental health
+        * Participation
+        * Income
+        * Learning and development
+        * Social networks
+        * Housing
+        * Savings and debt
+      - Do you understand why you have a guardian? (Yes/No)
+      - Do you experience less financial stress? (Yes/No)
+      - Biggest advantage/disadvantage (open text)
+      - Want finances in own control? (Yes/No)
+      - Confidence managing independently? (Yes/No)
+      - Want financial education? (Yes/No)
+
+      INCLUSIEF BESLISSEN survey includes:
+      - Trust rating with bewindvoerder (1-10)
+      - Support level needed for INCOME decisions (15 items)
+      - Support level needed for SPENDING decisions (14 items)
+      - Support level needed for ADMINISTRATION (12 items)
+      - Digital skills assessment
+      - Debt management needs
+
+      Features:
+      - Quarterly survey notification (configurable)
+      - Friendly, non-intimidating presentation
+      - Progress indicator during survey
+      - Save progress and continue later
+      - View past survey results
+      - Trend visualization (am I growing in autonomy?)
+      - Results shared with bewindvoerder for conversations
+    </toolbox_surveys>
+
+    <agenda_calendar>
+      Live calendar access and appointment booking
+
+      Features:
+      - View bewindvoerder's available time slots
+      - Select appointment type:
+        - In-person meeting
+        - Phone call
+        - Video call
+      - Select date and time from available slots
+      - Add notes/reason for appointment
+      - Submit appointment request
+      - View upcoming appointments
+      - View past appointments
+      - Receive appointment reminders (1 day before, 1 hour before)
+      - Cancel or request reschedule
+      - Integration with Google Calendar
+      - Integration with Microsoft Outlook
+    </agenda_calendar>
+
+    <notifications>
+      Push notification system
+
+      Notification types:
+      - Decision approved/denied
+      - Money request approved/denied
+      - Appointment confirmed/reminder
+      - Reflection prompt (day after decision)
+      - Survey reminder (quarterly)
+      - Budget warning (approaching limit)
+
+      Features:
+      - View notification history
+      - Mark as read
+      - Notification preferences (which types to receive)
+      - Badge count on app icon
+    </notifications>
+
+    <bewindvoerder_interface>
+      Minimal interface for guardians
+
+      Features:
+      - View client list (assigned clients only)
+      - View client details (potjes, recent decisions, survey results)
+      - Approve/deny decision requests with optional message
+      - Approve/deny money requests with optional message
+      - Upload CSV transaction files
+      - Set potje budgets per client
+      - View survey results and trends
+      - Calendar integration setup (Google/Outlook)
+      - Notification settings
+
+      NOTE: Actual money transfers happen OUTSIDE the app via banking systems.
+      The app facilitates the process and creates transparency.
+    </bewindvoerder_interface>
+
+    <settings_accessibility>
+      User settings and accessibility options
+
+      Features:
+      - Language selection (NL, EN, AR, TR)
+      - Text size adjustment (small, medium, large, extra large)
+      - High contrast mode
+      - PIN change
+      - Biometrics enable/disable
+      - Notification preferences
+      - About page
+      - Help/FAQ section
+      - Contact support
+    </settings_accessibility>
+  </core_features>
+
+  <database_schema>
+    <tables>
+      <users>
+        - id (UUID, primary key)
+        - type (enum: 'client' | 'bewindvoerder')
+        - email
+        - pin_hash
+        - first_name
+        - last_name
+        - language (default: 'nl')
+        - biometrics_enabled (boolean)
+        - text_size (enum: 'small' | 'medium' | 'large' | 'xlarge')
+        - high_contrast (boolean)
+        - created_at
+        - updated_at
+      </users>
+
+      <client_bewindvoerder_relations>
+        - id (UUID)
+        - client_id (FK to users)
+        - bewindvoerder_id (FK to users)
+        - created_at
+      </client_bewindvoerder_relations>
+
+      <potjes>
+        - id (UUID)
+        - client_id (FK to users)
+        - name (e.g., 'Boodschappen', 'Vrije tijd')
+        - icon
+        - monthly_budget (decimal)
+        - current_spent (decimal)
+        - reset_day (integer 1-31)
+        - created_at
+        - updated_at
+      </potjes>
+
+      <decisions>
+        - id (UUID)
+        - client_id (FK to users)
+        - title
+        - description
+        - amount (decimal)
+        - potje_id (FK to potjes)
+        - status (enum: 'pending' | 'approved' | 'denied')
+        - needs_help (boolean)
+        - bewindvoerder_message (text, optional)
+        - approved_at
+        - created_at
+        - updated_at
+      </decisions>
+
+      <reflections>
+        - id (UUID)
+        - decision_id (FK to decisions)
+        - satisfaction_rating (1-5)
+        - notes (text)
+        - created_at
+      </reflections>
+
+      <money_requests>
+        - id (UUID)
+        - client_id (FK to users)
+        - amount (decimal)
+        - category (potje name)
+        - description
+        - photo_url
+        - status (enum: 'pending' | 'approved' | 'denied')
+        - bewindvoerder_message (text, optional)
+        - created_at
+        - updated_at
+      </money_requests>
+
+      <transactions>
+        - id (UUID)
+        - client_id (FK to users)
+        - date
+        - description
+        - amount (decimal, negative for outgoing)
+        - category
+        - balance_after (decimal)
+        - imported_at
+      </transactions>
+
+      <documents>
+        - id (UUID)
+        - client_id (FK to users)
+        - original_image_url
+        - original_text (OCR result)
+        - simplified_text
+        - action_items (JSON)
+        - deadline (date, optional)
+        - created_at
+      </documents>
+
+      <savings_goals>
+        - id (UUID)
+        - client_id (FK to users)
+        - name
+        - target_amount (decimal)
+        - current_amount (decimal)
+        - target_date (date, optional)
+        - image_url
+        - is_completed (boolean)
+        - completed_at
+        - created_at
+        - updated_at
+      </savings_goals>
+
+      <survey_responses>
+        - id (UUID)
+        - client_id (FK to users)
+        - survey_type (enum: 'inclusiemeter' | 'inclusief_beslissen')
+        - responses (JSON)
+        - completed_at
+        - created_at
+      </survey_responses>
+
+      <appointments>
+        - id (UUID)
+        - client_id (FK to users)
+        - bewindvoerder_id (FK to users)
+        - appointment_type (enum: 'in_person' | 'phone' | 'video')
+        - scheduled_at (datetime)
+        - duration_minutes (integer)
+        - notes
+        - status (enum: 'pending' | 'confirmed' | 'cancelled')
+        - external_calendar_id (for sync)
+        - created_at
+        - updated_at
+      </appointments>
+
+      <notifications>
+        - id (UUID)
+        - user_id (FK to users)
+        - type (enum: various notification types)
+        - title
+        - message
+        - data (JSON, for deep linking)
+        - is_read (boolean)
+        - created_at
+      </notifications>
+
+      <notification_preferences>
+        - id (UUID)
+        - user_id (FK to users)
+        - notification_type
+        - enabled (boolean)
+      </notification_preferences>
+    </tables>
+  </database_schema>
+
+  <api_endpoints_summary>
+    <auth>
+      - POST /api/auth/login (PIN login)
+      - POST /api/auth/biometric (biometric login)
+      - POST /api/auth/logout
+      - POST /api/auth/pin/change
+      - GET /api/auth/me
+    </auth>
+    <potjes>
+      - GET /api/potjes (client's potjes)
+      - GET /api/potjes/:id
+      - PUT /api/potjes/:id (bewindvoerder only)
+    </potjes>
+    <decisions>
+      - GET /api/decisions
+      - POST /api/decisions
+      - GET /api/decisions/:id
+      - PUT /api/decisions/:id (cancel)
+      - PUT /api/decisions/:id/approve (bewindvoerder)
+      - PUT /api/decisions/:id/deny (bewindvoerder)
+      - POST /api/decisions/:id/reflection
+    </decisions>
+    <money_requests>
+      - GET /api/money-requests
+      - POST /api/money-requests
+      - GET /api/money-requests/:id
+      - PUT /api/money-requests/:id (cancel)
+      - PUT /api/money-requests/:id/approve (bewindvoerder)
+      - PUT /api/money-requests/:id/deny (bewindvoerder)
+    </money_requests>
+    <transactions>
+      - GET /api/transactions
+      - GET /api/transactions/:id
+      - POST /api/transactions/import (bewindvoerder, CSV upload)
+    </transactions>
+    <documents>
+      - GET /api/documents
+      - POST /api/documents (upload + process)
+      - GET /api/documents/:id
+      - DELETE /api/documents/:id
+    </documents>
+    <savings_goals>
+      - GET /api/savings-goals
+      - POST /api/savings-goals
+      - GET /api/savings-goals/:id
+      - PUT /api/savings-goals/:id
+      - DELETE /api/savings-goals/:id
+    </savings_goals>
+    <surveys>
+      - GET /api/surveys (available surveys)
+      - POST /api/surveys/:type/responses
+      - GET /api/surveys/responses (history)
+      - GET /api/surveys/responses/:id
+    </surveys>
+    <appointments>
+      - GET /api/appointments
+      - GET /api/appointments/available-slots
+      - POST /api/appointments
+      - PUT /api/appointments/:id
+      - DELETE /api/appointments/:id
+    </appointments>
+    <notifications>
+      - GET /api/notifications
+      - PUT /api/notifications/:id/read
+      - PUT /api/notifications/read-all
+      - GET /api/notifications/preferences
+      - PUT /api/notifications/preferences
+    </notifications>
+    <bewindvoerder>
+      - GET /api/bewindvoerder/clients
+      - GET /api/bewindvoerder/clients/:id
+      - GET /api/bewindvoerder/pending (all pending requests)
+      - PUT /api/bewindvoerder/potjes/:id
+      - POST /api/bewindvoerder/transactions/import
+      - GET /api/bewindvoerder/calendar/setup
+      - POST /api/bewindvoerder/calendar/connect
+    </bewindvoerder>
+    <users>
+      - GET /api/users/profile
+      - PUT /api/users/profile
+      - PUT /api/users/settings
+    </users>
+  </api_endpoints_summary>
+
+  <ui_layout>
+    <main_structure>
+      Mobile-first layout with bottom tab navigation:
+
+      CLIENT TABS:
+      1. Home (Overzicht) - Dashboard with potjes overview, pending items
+      2. Keuzes - Beslis-Protocol: new decisions, history, reflections
+      3. Geld - Money requests, transaction history
+      4. Toolbox - Documents (Lees Simpel), surveys, savings goals
+      5. Agenda - Calendar view, appointments
+
+      BEWINDVOERDER TABS:
+      1. Clients - List of assigned clients
+      2. Pending - All pending approvals (decisions + money requests)
+      3. Agenda - Calendar management
+      4. Settings - Account, integrations
+    </main_structure>
+    <screens>
+      - Onboarding flow (first launch)
+      - PIN entry / Biometric prompt
+      - Home dashboard
+      - Potje detail view
+      - New decision wizard (multi-step)
+      - Decision detail (with reflection)
+      - New money request form
+      - Request detail
+      - Transaction list
+      - Transaction detail
+      - Lees Simpel camera/upload
+      - Document result view
+      - Saved documents list
+      - Survey intro screen
+      - Survey questions (one at a time)
+      - Survey results/history
+      - Savings goals list
+      - New goal form
+      - Goal detail with progress
+      - Available slots calendar
+      - New appointment form
+      - Appointment detail
+      - Notifications list
+      - Settings screen
+      - Profile edit
+      - Language selection
+      - About/Help
+    </screens>
+  </ui_layout>
+
+  <design_system>
+    <style>Neo-brutalism with friendly warmth</style>
+    <color_palette>
+      <primary>#d6453a (Inversie Red)</primary>
+      <primary_dark>#d93428</primary_dark>
+      <accent>#f76a0c (Orange)</accent>
+      <background>#F4F0E6 (Warm Cream)</background>
+      <surface>#FFFFFF</surface>
+      <text_primary>#111111</text_primary>
+      <text_secondary>#353535</text_secondary>
+      <text_muted>#888888</text_muted>
+      <success>#22c55e</success>
+      <warning>#f59e0b</warning>
+      <error>#ef4444</error>
+    </color_palette>
+    <typography>
+      <font_family>System fonts (San Francisco on iOS, Roboto on Android)</font_family>
+      <headings>Bold, large, high contrast</headings>
+      <body>Regular weight, comfortable reading size</body>
+      <accessibility>Support for 4 text size levels</accessibility>
+    </typography>
+    <components>
+      - Hard shadows (4-8px offset, black)
+      - Thick borders (2-3px)
+      - Large touch targets (min 48px)
+      - Bold, blocky buttons
+      - Card-based layouts
+      - Progress bars with thick borders
+      - Confetti animation for celebrations
+      - Skeleton loaders
+      - Pull-to-refresh
+    </components>
+    <accessibility>
+      - High contrast mode available
+      - Large touch targets throughout
+      - Screen reader support
+      - Keyboard/switch navigation support
+      - No information conveyed by color alone
+      - Clear focus indicators
+    </accessibility>
+  </design_system>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Foundation Setup</title>
+      <tasks>
+        - Initialize Expo React Native project
+        - Set up Node.js backend with Express
+        - Configure SQLite database with Prisma
+        - Set up project structure (monorepo with frontend/backend)
+        - Configure basic routing and navigation
+        - Set up internationalization (i18n) with Dutch as default
+      </tasks>
+    </step>
+    <step number="2">
+      <title>Authentication System</title>
+      <tasks>
+        - Implement PIN-based authentication
+        - Add biometric authentication (Face ID / Fingerprint)
+        - Create onboarding flow for first-time users
+        - Implement session management
+        - Create login/logout flows
+        - Add PIN change functionality
+      </tasks>
+    </step>
+    <step number="3">
+      <title>Core Client Features - Potjes</title>
+      <tasks>
+        - Create potjes overview screen
+        - Implement potje detail view
+        - Add visual progress bars
+        - Connect to backend API
+        - Add budget warning notifications
+      </tasks>
+    </step>
+    <step number="4">
+      <title>Beslis-Protocol</title>
+      <tasks>
+        - Create multi-step decision wizard
+        - Implement financial overview display
+        - Add impact visualization
+        - Create pending decisions list
+        - Implement decision history with reflections
+        - Add reflection prompt system (scheduled notifications)
+        - Create reflection submission flow
+      </tasks>
+    </step>
+    <step number="5">
+      <title>Money Requests</title>
+      <tasks>
+        - Create request form with photo capture
+        - Implement camera and gallery integration
+        - Add category selection
+        - Create request status tracking
+        - Implement request history view
+      </tasks>
+    </step>
+    <step number="6">
+      <title>Transactions</title>
+      <tasks>
+        - Create transaction list view
+        - Implement filtering and search
+        - Add transaction detail view
+        - Implement CSV import (bewindvoerder side)
+        - Add pull-to-refresh
+      </tasks>
+    </step>
+    <step number="7">
+      <title>Lees Simpel (Document AI)</title>
+      <tasks>
+        - Implement photo capture/upload
+        - Integrate OCR (text extraction)
+        - Connect to OpenAI API for simplification
+        - Create result display (original + simplified)
+        - Add action items extraction
+        - Implement document saving and history
+      </tasks>
+    </step>
+    <step number="8">
+      <title>Toolbox Surveys</title>
+      <tasks>
+        - Implement survey question types (yes/no, scale, text)
+        - Create Inclusiemeter survey
+        - Create Inclusief Beslissen survey
+        - Add progress tracking
+        - Implement results visualization
+        - Add trend tracking over time
+        - Set up quarterly reminder notifications
+      </tasks>
+    </step>
+    <step number="9">
+      <title>Savings Goals</title>
+      <tasks>
+        - Create savings goal list view
+        - Implement new goal form
+        - Add visual progress tracking
+        - Implement celebration animation on completion
+        - Add goal editing and deletion
+      </tasks>
+    </step>
+    <step number="10">
+      <title>Agenda & Calendar</title>
+      <tasks>
+        - Implement available slots view
+        - Create appointment booking flow
+        - Add appointment types selection
+        - Implement appointment history
+        - Add reminder notifications
+        - Integrate Google Calendar API
+        - Integrate Microsoft Graph API (Outlook)
+      </tasks>
+    </step>
+    <step number="11">
+      <title>Bewindvoerder Interface</title>
+      <tasks>
+        - Create client list view
+        - Implement client detail view
+        - Add approve/deny flows for decisions
+        - Add approve/deny flows for money requests
+        - Implement CSV upload for transactions
+        - Add potje budget management
+        - Create calendar integration setup
+      </tasks>
+    </step>
+    <step number="12">
+      <title>Notifications System</title>
+      <tasks>
+        - Set up Expo Push Notifications
+        - Implement notification types
+        - Create notification history view
+        - Add notification preferences
+        - Implement badge count
+        - Schedule reflection and survey reminders
+      </tasks>
+    </step>
+    <step number="13">
+      <title>Settings & Accessibility</title>
+      <tasks>
+        - Implement language selection (NL, EN, AR, TR)
+        - Add text size adjustment
+        - Implement high contrast mode
+        - Create profile editing
+        - Add help/FAQ section
+      </tasks>
+    </step>
+    <step number="14">
+      <title>Polish & Testing</title>
+      <tasks>
+        - Implement neo-brutalism design throughout
+        - Add loading states and skeletons
+        - Implement error handling
+        - Add empty states
+        - Optimize performance
+        - Test on multiple devices
+        - Accessibility audit and fixes
+      </tasks>
+    </step>
+  </implementation_steps>
+
+  <success_criteria>
+    <functionality>
+      - All features from app_spec implemented and working
+      - Data persists correctly across sessions
+      - No mock data - everything connected to real database
+      - Multi-language support working correctly
+      - Calendar integrations functional
+      - AI document translation working
+    </functionality>
+    <user_experience>
+      - App is intuitive for users with cognitive challenges
+      - Large touch targets, clear buttons
+      - Supportive, friendly tone throughout
+      - Celebration moments (confetti on achievements)
+      - No frustrating error states - clear guidance always
+    </user_experience>
+    <technical_quality>
+      - No crashes or freezes
+      - Fast load times (< 3 seconds)
+      - Offline handling (graceful degradation)
+      - Secure authentication
+      - Clean code architecture
+    </technical_quality>
+    <design_polish>
+      - Consistent neo-brutalism style
+      - Inversie brand colors throughout
+      - Animations and micro-interactions
+      - Responsive across device sizes
+      - Accessibility standards met (WCAG AA)
+    </design_polish>
+  </success_criteria>
+</project_specification>
