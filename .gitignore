@@ -56,3 +56,38 @@ web-build/
 
 # TypeScript
 *.tsbuildinfo
+
+# Playwright
+.playwright-mcp/
+
+# Package locks (optional - some teams prefer to commit these)
+# Uncomment if you want to ignore package-lock.json
+# package-lock.json
+# yarn.lock
+
+# Expo
+.expo/
+.expo-shared/
+
+# iOS
+ios/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+project.xcworkspace/
+
+# Android
+android/
+*.apk
+*.ap_
+*.aab
+.gradle/
+local.properties
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
