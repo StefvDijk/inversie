@@ -145,6 +145,52 @@ cleanup() {
     exit 0
 }
 
+# Check if servers are already running
+check_servers_running() {
+    if curl -s http://localhost:3000/health > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ Backend already running on port 3000${NC}"
+        return 0
+    fi
+    return 1
+}
+
+# Start servers in background (non-blocking)
+start_servers_background() {
+    echo ""
+    echo -e "${YELLOW}Starting development servers in background...${NC}"
+
+    # Start backend in background
+    if [ -d "backend" ]; then
+        echo "Starting backend server..."
+        cd backend
+        nohup npm run dev > ../backend.log 2>&1 &
+        cd ..
+        sleep 2
+    fi
+
+    # Start frontend in background
+    if [ -d "frontend" ]; then
+        echo "Starting frontend (Expo)..."
+        cd frontend
+        nohup npm start > ../frontend.log 2>&1 &
+        cd ..
+    fi
+
+    echo ""
+    echo "=================================================="
+    echo -e "${GREEN}Development servers started in background!${NC}"
+    echo "=================================================="
+    echo ""
+    echo "Access the application:"
+    echo "  - Backend API: http://localhost:3000"
+    echo "  - Expo DevTools: http://localhost:8081"
+    echo ""
+    echo "Logs available at:"
+    echo "  - backend.log"
+    echo "  - frontend.log"
+    echo ""
+}
+
 # Main execution
 main() {
     # Navigate to project root
@@ -169,10 +215,25 @@ main() {
             cd frontend
             npm start
             ;;
+        --background)
+            # Non-blocking mode for automated agents
+            if check_servers_running; then
+                echo "Servers already running, skipping startup."
+            else
+                install_deps
+                setup_database
+                start_servers_background
+            fi
+            ;;
         *)
-            install_deps
-            setup_database
-            start_servers
+            # Check if servers already running first
+            if check_servers_running; then
+                echo "Servers already running. Use --install-only to reinstall dependencies."
+            else
+                install_deps
+                setup_database
+                start_servers
+            fi
             ;;
     esac
 }

@@ -4,14 +4,8 @@
     "slug": "inversie",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "scheme": "inversie",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F4F0E6"
-    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
@@ -23,10 +17,6 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F4F0E6"
-      },
       "package": "com.inversie.app",
       "permissions": [
         "android.permission.CAMERA",
@@ -35,32 +25,10 @@
       ]
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro"
     },
     "plugins": [
-      "expo-router",
-      "expo-local-authentication",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow Inversie to access your camera for document scanning."
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Allow Inversie to access your photos for money requests."
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#d6453a"
-        }
-      ]
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true

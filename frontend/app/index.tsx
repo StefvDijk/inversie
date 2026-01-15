@@ -1,21 +1,10 @@
-import { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { useAuthStore } from '../store/authStore';
 
 export default function Index() {
-  useEffect(() => {
-    // Check for existing session and redirect accordingly
-    const checkAuth = async () => {
-      // TODO: Check secure store for session token
-      // For now, always redirect to login
-      setTimeout(() => {
-        router.replace('/login');
-      }, 1000);
-    };
+  const { token, isInitialized } = useAuthStore();
 
-    checkAuth();
-  }, []);
-
+  // Show loading screen - navigation will be handled by AuthGuard in _layout.tsx
   return (
     <View className="flex-1 items-center justify-center bg-background">
       <Text className="text-3xl font-bold text-primary mb-4">Inversie</Text>

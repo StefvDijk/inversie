@@ -9,14 +9,14 @@ datasource db {
 
 model User {
   id                String   @id @default(uuid())
-  type              UserType
+  type              String   // 'CLIENT' | 'BEWINDVOERDER'
   email             String   @unique
   pinHash           String
   firstName         String
   lastName          String
   language          String   @default("nl")
   biometricsEnabled Boolean  @default(false)
-  textSize          TextSize @default(MEDIUM)
+  textSize          String   @default("MEDIUM") // 'SMALL' | 'MEDIUM' | 'LARGE' | 'XLARGE'
   highContrast      Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -35,6 +35,17 @@ model User {
   notificationPreferences NotificationPreference[]
   clientRelations        ClientBewindvoerderRelation[] @relation("ClientRelations")
   bewindvoerderRelations ClientBewindvoerderRelation[] @relation("BewindvoerderRelations")
+  sessions               Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ClientBewindvoerderRelation {
@@ -65,18 +76,18 @@ model Potje {
 }
 
 model Decision {
-  id                 String         @id @default(uuid())
+  id                 String    @id @default(uuid())
   clientId           String
   title              String
   description        String?
   amount             Float
   potjeId            String
-  status             RequestStatus  @default(PENDING)
-  needsHelp          Boolean        @default(false)
+  status             String    @default("PENDING") // 'PENDING' | 'APPROVED' | 'DENIED'
+  needsHelp          Boolean   @default(false)
   bewindvoerderMessage String?
   approvedAt         DateTime?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   client     User        @relation(fields: [clientId], references: [id], onDelete: Cascade)
   potje      Potje       @relation(fields: [potjeId], references: [id])
@@ -94,16 +105,16 @@ model Reflection {
 }
 
 model MoneyRequest {
-  id                   String        @id @default(uuid())
+  id                   String   @id @default(uuid())
   clientId             String
   amount               Float
   category             String
   description          String?
   photoUrl             String
-  status               RequestStatus @default(PENDING)
+  status               String   @default("PENDING") // 'PENDING' | 'APPROVED' | 'DENIED'
   bewindvoerderMessage String?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
@@ -151,48 +162,48 @@ model SavingsGoal {
 }
 
 model SurveyResponse {
-  id          String     @id @default(uuid())
+  id          String    @id @default(uuid())
   clientId    String
-  surveyType  SurveyType
-  responses   String     // JSON string
+  surveyType  String    // 'INCLUSIEMETER' | 'INCLUSIEF_BESLISSEN'
+  responses   String    // JSON string
   completedAt DateTime?
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime  @default(now())
 
   client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 model Appointment {
-  id                 String            @id @default(uuid())
+  id                 String   @id @default(uuid())
   clientId           String
   bewindvoerderId    String
-  appointmentType    AppointmentType
+  appointmentType    String   // 'IN_PERSON' | 'PHONE' | 'VIDEO'
   scheduledAt        DateTime
-  durationMinutes    Int               @default(30)
+  durationMinutes    Int      @default(30)
   notes              String?
-  status             AppointmentStatus @default(PENDING)
+  status             String   @default("PENDING") // 'PENDING' | 'CONFIRMED' | 'CANCELLED'
   externalCalendarId String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   client        User @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
   bewindvoerder User @relation("BewindvoerderAppointments", fields: [bewindvoerderId], references: [id])
 }
 
 model Notification {
-  id        String           @id @default(uuid())
+  id        String   @id @default(uuid())
   userId    String
-  type      NotificationType
+  type      String   // Notification type (e.g., 'DECISION_APPROVED', 'MONEY_REQUEST_DENIED', etc.)
   title     String
   message   String
-  data      String?          // JSON string for deep linking
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  data      String?  // JSON string for deep linking
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model NotificationPreference {
-  id               String @id @default(uuid())
+  id               String  @id @default(uuid())
   userId           String
   notificationType String
   enabled          Boolean @default(true)
@@ -200,51 +211,4 @@ model NotificationPreference {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, notificationType])
-}
-
-enum UserType {
-  CLIENT
-  BEWINDVOERDER
-}
-
-enum TextSize {
-  SMALL
-  MEDIUM
-  LARGE
-  XLARGE
-}
-
-enum RequestStatus {
-  PENDING
-  APPROVED
-  DENIED
-}
-
-enum AppointmentType {
-  IN_PERSON
-  PHONE
-  VIDEO
-}
-
-enum AppointmentStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-}
-
-enum SurveyType {
-  INCLUSIEMETER
-  INCLUSIEF_BESLISSEN
-}
-
-enum NotificationType {
-  DECISION_APPROVED
-  DECISION_DENIED
-  MONEY_REQUEST_APPROVED
-  MONEY_REQUEST_DENIED
-  APPOINTMENT_CONFIRMED
-  APPOINTMENT_REMINDER
-  REFLECTION_PROMPT
-  SURVEY_REMINDER
-  BUDGET_WARNING
 }
