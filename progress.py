@@ -13,7 +13,6 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-
 WEBHOOK_URL = os.environ.get("PROGRESS_N8N_WEBHOOK_URL")
 PROGRESS_CACHE_FILE = ".progress_cache"
 
@@ -104,10 +103,7 @@ def get_all_passing_features(project_dir: Path) -> list[dict]:
         cursor.execute(
             "SELECT id, category, name FROM features WHERE passes = 1 ORDER BY priority ASC"
         )
-        features = [
-            {"id": row[0], "category": row[1], "name": row[2]}
-            for row in cursor.fetchall()
-        ]
+        features = [{"id": row[0], "category": row[1], "name": row[2]} for row in cursor.fetchall()]
         conn.close()
         return features
     except Exception:
@@ -180,9 +176,7 @@ def send_progress_webhook(passing: int, total: int, project_dir: Path) -> None:
             print(f"[Webhook notification failed: {e}]")
 
         # Update cache with count and passing IDs
-        cache_file.write_text(
-            json.dumps({"count": passing, "passing_ids": current_passing_ids})
-        )
+        cache_file.write_text(json.dumps({"count": passing, "passing_ids": current_passing_ids}))
     else:
         # Update cache even if no change (for initial state)
         if not cache_file.exists():

@@ -6,11 +6,10 @@ SQLite database schema for feature storage using SQLAlchemy.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from sqlalchemy import Boolean, Column, Integer, String, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.types import JSON
 
 Base = declarative_base()
@@ -74,7 +73,7 @@ def create_database(project_dir: Path) -> tuple:
 
 
 # Global session maker - will be set when server starts
-_session_maker: Optional[sessionmaker] = None
+_session_maker: sessionmaker | None = None
 
 
 def set_session_maker(session_maker: sessionmaker) -> None:

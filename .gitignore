@@ -4,7 +4,44 @@ generations/
 # Log files
 logs/
 
+# Python virtual environments
 venv/
+.venv/
+
+# Environment files
 .env
+.env.local
+
+# Python bytecode
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+
+# Test and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# Type checking
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (for package.json dependencies)
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db

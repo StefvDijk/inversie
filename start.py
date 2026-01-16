@@ -9,16 +9,15 @@ Supports two paths for new projects:
 """
 
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 from prompts import (
-    scaffold_project_prompts,
-    has_project_prompts,
     get_project_prompts_dir,
+    has_project_prompts,
+    scaffold_project_prompts,
 )
-
 
 # Directory containing generated projects
 GENERATIONS_DIR = Path(__file__).parent / "generations"
@@ -61,7 +60,7 @@ def get_existing_projects() -> list[str]:
 
     projects = []
     for item in GENERATIONS_DIR.iterdir():
-        if item.is_dir() and not item.name.startswith('.'):
+        if item.is_dir() and not item.name.startswith("."):
             projects.append(item.name)
 
     return sorted(projects)
@@ -99,7 +98,7 @@ def get_project_choice(projects: list[str]) -> str | None:
     while True:
         choice = input("Select project number: ").strip().lower()
 
-        if choice == 'b':
+        if choice == "b":
             return None
 
         try:
@@ -130,7 +129,7 @@ def get_new_project_name() -> str | None:
         invalid_chars = '<>:"/\\|?*'
     else:
         # Unix only restricts / and null
-        invalid_chars = '/'
+        invalid_chars = "/"
 
     for char in invalid_chars:
         if char in name:
@@ -183,7 +182,7 @@ def run_spec_creation(project_dir: Path) -> bool:
         subprocess.run(
             ["claude", f"/create-spec {project_dir}"],
             check=False,  # Don't raise on non-zero exit
-            cwd=str(Path(__file__).parent)  # Run from project root
+            cwd=str(Path(__file__).parent),  # Run from project root
         )
 
         # Check if spec was created in project prompts directory
@@ -219,9 +218,9 @@ def run_manual_spec_flow(project_dir: Path) -> bool:
     print("  Manual Specification Setup")
     print("-" * 50)
     print("\nTemplate files have been created. Edit these files in your editor:")
-    print(f"\n  Required:")
+    print("\n  Required:")
     print(f"    {prompts_dir / 'app_spec.txt'}")
-    print(f"\n  Optional (customize agent behavior):")
+    print("\n  Optional (customize agent behavior):")
     print(f"    {prompts_dir / 'initializer_prompt.md'}")
     print(f"    {prompts_dir / 'coding_prompt.md'}")
     print("\n" + "-" * 50)
@@ -243,7 +242,7 @@ def run_manual_spec_flow(project_dir: Path) -> bool:
         print("\nWarning: The app_spec.txt file still contains the template placeholder.")
         print("The agent may not work correctly without a proper specification.")
         confirm = input("Continue anyway? [y/N]: ").strip().lower()
-        return confirm == 'y'
+        return confirm == "y"
 
 
 def ask_spec_creation_choice() -> str | None:
@@ -261,7 +260,7 @@ def ask_spec_creation_choice() -> str | None:
 
     while True:
         choice = input("Select [1/2/b]: ").strip().lower()
-        if choice in ['1', '2', 'b']:
+        if choice in ["1", "2", "b"]:
             return choice
         print("Invalid choice. Please enter 1, 2, or b.")
 
@@ -287,17 +286,17 @@ def create_new_project_flow() -> str | None:
     # Ask user how they want to handle spec creation
     choice = ask_spec_creation_choice()
 
-    if choice == 'b':
+    if choice == "b":
         return None
-    elif choice == '1':
+    elif choice == "1":
         # Create spec with Claude
         success = run_spec_creation(project_dir)
         if not success:
             print("\nYou can try again later or edit the templates manually.")
             retry = input("Start agent anyway? [y/N]: ").strip().lower()
-            if retry != 'y':
+            if retry != "y":
                 return None
-    elif choice == '2':
+    elif choice == "2":
         # Manual mode - guide user through editing
         success = run_manual_spec_flow(project_dir)
         if not success:
@@ -315,7 +314,7 @@ def run_agent(project_name: str) -> None:
         print(f"\nWarning: No valid spec found for project '{project_name}'")
         print("The agent may not work correctly.")
         confirm = input("Continue anyway? [y/N]: ").strip().lower()
-        if confirm != 'y':
+        if confirm != "y":
             return
 
     print(f"\nStarting agent for project: {project_name}")
@@ -343,16 +342,16 @@ def main() -> None:
 
         choice = input("Select option: ").strip().lower()
 
-        if choice == 'q':
+        if choice == "q":
             print("\nGoodbye!")
             break
 
-        elif choice == '1':
+        elif choice == "1":
             project_name = create_new_project_flow()
             if project_name:
                 run_agent(project_name)
 
-        elif choice == '2' and projects:
+        elif choice == "2" and projects:
             display_projects(projects)
             selected = get_project_choice(projects)
             if selected:

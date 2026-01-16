@@ -9,9 +9,8 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from api.database import Feature
 
@@ -46,21 +45,19 @@ def migrate_json_to_sqlite(
     try:
         existing_count = session.query(Feature).count()
         if existing_count > 0:
-            print(
-                f"Database already has {existing_count} features, skipping migration"
-            )
+            print(f"Database already has {existing_count} features, skipping migration")
             return False
     finally:
         session.close()
 
     # Load JSON data
     try:
-        with open(json_file, "r", encoding="utf-8") as f:
+        with open(json_file, encoding="utf-8") as f:
             features_data = json.load(f)
     except json.JSONDecodeError as e:
         print(f"Error parsing feature_list.json: {e}")
         return False
-    except IOError as e:
+    except OSError as e:
         print(f"Error reading feature_list.json: {e}")
         return False
 
@@ -106,7 +103,7 @@ def migrate_json_to_sqlite(
     try:
         shutil.move(json_file, backup_file)
         print(f"Original JSON backed up to: {backup_file.name}")
-    except IOError as e:
+    except OSError as e:
         print(f"Warning: Could not backup JSON file: {e}")
         # Continue anyway - the data is in the database
 
@@ -116,7 +113,7 @@ def migrate_json_to_sqlite(
 def export_to_json(
     project_dir: Path,
     session_maker: sessionmaker,
-    output_file: Optional[Path] = None,
+    output_file: Path | None = None,
 ) -> Path:
     """
     Export features from database back to JSON format.
@@ -136,11 +133,7 @@ def export_to_json(
 
     session: Session = session_maker()
     try:
-        features = (
-            session.query(Feature)
-            .order_by(Feature.priority.asc(), Feature.id.asc())
-            .all()
-        )
+        features = session.query(Feature).order_by(Feature.priority.asc(), Feature.id.asc()).all()
 
         features_data = [f.to_dict() for f in features]
 

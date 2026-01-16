@@ -6,7 +6,6 @@ Functions for creating and configuring the Claude Agent SDK client.
 """
 
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -14,7 +13,6 @@ from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient
 from claude_agent_sdk.types import HookMatcher
 
 from security import bash_security_hook
-
 
 # Feature MCP tools for feature/test management
 FEATURE_MCP_TOOLS = [
@@ -33,7 +31,6 @@ PLAYWRIGHT_TOOLS = [
     "mcp__playwright__browser_navigate_back",
     "mcp__playwright__browser_take_screenshot",
     "mcp__playwright__browser_snapshot",
-
     # Element interaction
     "mcp__playwright__browser_click",
     "mcp__playwright__browser_type",
@@ -42,13 +39,11 @@ PLAYWRIGHT_TOOLS = [
     "mcp__playwright__browser_hover",
     "mcp__playwright__browser_drag",
     "mcp__playwright__browser_press_key",
-
     # JavaScript & debugging
     "mcp__playwright__browser_evaluate",
     "mcp__playwright__browser_run_code",
     "mcp__playwright__browser_console_messages",
     "mcp__playwright__browser_network_requests",
-
     # Browser management
     "mcp__playwright__browser_close",
     "mcp__playwright__browser_resize",
@@ -143,7 +138,10 @@ def create_client(project_dir: Path, model: str):
                 *FEATURE_MCP_TOOLS,
             ],
             mcp_servers={
-                "playwright": {"command": "npx", "args": ["@playwright/mcp@latest", "--viewport-size", "1280x720"]},
+                "playwright": {
+                    "command": "npx",
+                    "args": ["@playwright/mcp@latest", "--viewport-size", "1280x720"],
+                },
                 "features": {
                     "command": sys.executable,  # Use the same Python that's running this script
                     "args": ["-m", "mcp_server.feature_mcp"],

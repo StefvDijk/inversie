@@ -14,7 +14,6 @@ Example Usage:
 
 import argparse
 import asyncio
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -24,7 +23,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from agent import run_autonomous_agent
-
 
 # Configuration
 # DEFAULT_MODEL = "claude-sonnet-4-5-20250929"

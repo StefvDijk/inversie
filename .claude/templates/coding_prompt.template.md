@@ -39,12 +39,17 @@ for the application you're building.
 
 ### STEP 2: START SERVERS (IF NOT RUNNING)
 
-If `init.sh` exists, run it:
+If `init.sh` exists, run it with `--background` to start servers non-blocking:
 
 ```bash
 chmod +x init.sh
-./init.sh
+./init.sh --background
 ```
+
+This will:
+- Check if servers are already running (skip if yes)
+- Install dependencies if needed
+- Start servers in background and return immediately
 
 Otherwise, start servers manually and document the process.
 

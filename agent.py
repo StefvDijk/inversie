@@ -7,19 +7,16 @@ Core agent interaction functions for running autonomous coding sessions.
 
 import asyncio
 from pathlib import Path
-from typing import Optional
 
 from claude_agent_sdk import ClaudeSDKClient
 
 from client import create_client
-from progress import print_session_header, print_progress_summary, has_features
+from progress import has_features, print_progress_summary, print_session_header
 from prompts import (
-    get_initializer_prompt,
-    get_coding_prompt,
     copy_spec_to_project,
-    has_project_prompts,
+    get_coding_prompt,
+    get_initializer_prompt,
 )
-
 
 # Configuration
 AUTO_CONTINUE_DELAY_SECONDS = 3
@@ -102,7 +99,7 @@ async def run_agent_session(
 async def run_autonomous_agent(
     project_dir: Path,
     model: str,
-    max_iterations: Optional[int] = None,
+    max_iterations: int | None = None,
 ) -> None:
     """
     Run the autonomous agent loop.

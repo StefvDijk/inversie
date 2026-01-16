@@ -39,21 +39,27 @@ PROJECT_DIR = Path(os.environ.get("PROJECT_DIR", ".")).resolve()
 # Pydantic models for input validation
 class MarkPassingInput(BaseModel):
     """Input for marking a feature as passing."""
+
     feature_id: int = Field(..., description="The ID of the feature to mark as passing", ge=1)
 
 
 class SkipFeatureInput(BaseModel):
     """Input for skipping a feature."""
+
     feature_id: int = Field(..., description="The ID of the feature to skip", ge=1)
 
 
 class RegressionInput(BaseModel):
     """Input for getting regression features."""
-    limit: int = Field(default=3, ge=1, le=10, description="Maximum number of passing features to return")
+
+    limit: int = Field(
+        default=3, ge=1, le=10, description="Maximum number of passing features to return"
+    )
 
 
 class FeatureCreateItem(BaseModel):
     """Schema for creating a single feature."""
+
     category: str = Field(..., min_length=1, max_length=100, description="Feature category")
     name: str = Field(..., min_length=1, max_length=255, description="Feature name")
     description: str = Field(..., min_length=1, description="Detailed description")
@@ -62,7 +68,10 @@ class FeatureCreateItem(BaseModel):
 
 class BulkCreateInput(BaseModel):
     """Input for bulk creating features."""
-    features: list[FeatureCreateItem] = Field(..., min_length=1, description="List of features to create")
+
+    features: list[FeatureCreateItem] = Field(
+        ..., min_length=1, description="List of features to create"
+    )
 
 
 # Global database session maker (initialized on startup)
@@ -118,11 +127,7 @@ def feature_get_stats() -> str:
         passing = session.query(Feature).filter(Feature.passes == True).count()
         percentage = round((passing / total) * 100, 1) if total > 0 else 0.0
 
-        return json.dumps({
-            "passing": passing,
-            "total": total,
-            "percentage": percentage
-        }, indent=2)
+        return json.dumps({"passing": passing, "total": total, "percentage": percentage}, indent=2)
     finally:
         session.close()
 
@@ -157,7 +162,10 @@ def feature_get_next() -> str:
 
 @mcp.tool()
 def feature_get_for_regression(
-    limit: Annotated[int, Field(default=3, ge=1, le=10, description="Maximum number of passing features to return")] = 3
+    limit: Annotated[
+        int,
+        Field(default=3, ge=1, le=10, description="Maximum number of passing features to return"),
+    ] = 3,
 ) -> str:
     """Get random passing features for regression testing.
 
@@ -181,17 +189,16 @@ def feature_get_for_regression(
             .all()
         )
 
-        return json.dumps({
-            "features": [f.to_dict() for f in features],
-            "count": len(features)
-        }, indent=2)
+        return json.dumps(
+            {"features": [f.to_dict() for f in features], "count": len(features)}, indent=2
+        )
     finally:
         session.close()
 
 
 @mcp.tool()
 def feature_mark_passing(
-    feature_id: Annotated[int, Field(description="The ID of the feature to mark as passing", ge=1)]
+    feature_id: Annotated[int, Field(description="The ID of the feature to mark as passing", ge=1)],
 ) -> str:
     """Mark a feature as passing after successful implementation.
 
@@ -222,7 +229,7 @@ def feature_mark_passing(
 
 @mcp.tool()
 def feature_skip(
-    feature_id: Annotated[int, Field(description="The ID of the feature to skip", ge=1)]
+    feature_id: Annotated[int, Field(description="The ID of the feature to skip", ge=1)],
 ) -> str:
     """Skip a feature by moving it to the end of the priority queue.
 
@@ -253,27 +260,37 @@ def feature_skip(
         old_priority = feature.priority
 
         # Get max priority and set this feature to max + 1
-        max_priority_result = session.query(Feature.priority).order_by(Feature.priority.desc()).first()
+        max_priority_result = (
+            session.query(Feature.priority).order_by(Feature.priority.desc()).first()
+        )
         new_priority = (max_priority_result[0] + 1) if max_priority_result else 1
 
         feature.priority = new_priority
         session.commit()
         session.refresh(feature)
 
-        return json.dumps({
-            "id": feature.id,
-            "name": feature.name,
-            "old_priority": old_priority,
-            "new_priority": new_priority,
-            "message": f"Feature '{feature.name}' moved to end of queue"
-        }, indent=2)
+        return json.dumps(
+            {
+                "id": feature.id,
+                "name": feature.name,
+                "old_priority": old_priority,
+                "new_priority": new_priority,
+                "message": f"Feature '{feature.name}' moved to end of queue",
+            },
+            indent=2,
+        )
     finally:
         session.close()
 
 
 @mcp.tool()
 def feature_create_bulk(
-    features: Annotated[list[dict], Field(description="List of features to create, each with category, name, description, and steps")]
+    features: Annotated[
+        list[dict],
+        Field(
+            description="List of features to create, each with category, name, description, and steps"
+        ),
+    ],
 ) -> str:
     """Create multiple features in a single operation.
 
@@ -296,16 +313,20 @@ def feature_create_bulk(
     session = get_session()
     try:
         # Get the starting priority
-        max_priority_result = session.query(Feature.priority).order_by(Feature.priority.desc()).first()
+        max_priority_result = (
+            session.query(Feature.priority).order_by(Feature.priority.desc()).first()
+        )
         start_priority = (max_priority_result[0] + 1) if max_priority_result else 1
 
         created_count = 0
         for i, feature_data in enumerate(features):
             # Validate required fields
             if not all(key in feature_data for key in ["category", "name", "description", "steps"]):
-                return json.dumps({
-                    "error": f"Feature at index {i} missing required fields (category, name, description, steps)"
-                })
+                return json.dumps(
+                    {
+                        "error": f"Feature at index {i} missing required fields (category, name, description, steps)"
+                    }
+                )
 
             db_feature = Feature(
                 priority=start_priority + i,
