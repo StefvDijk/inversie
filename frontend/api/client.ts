@@ -1,5 +1,10 @@
 // API Client for Inversie backend
-const API_BASE_URL = 'http://localhost:3000';
+import { Platform } from 'react-native';
+
+// Use local IP for native (phone can't reach localhost), localhost for web
+const API_BASE_URL = Platform.OS === 'web'
+  ? 'http://localhost:3000'
+  : 'http://192.168.1.241:3000';
 
 interface ApiOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';

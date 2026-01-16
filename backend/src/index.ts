@@ -664,6 +664,352 @@ app.put('/api/users/settings', authenticateToken, async (req, res) => {
 });
 
 // ============================================
+// BEWINDVOERDER ROUTES
+// ============================================
+
+// Get all clients for current bewindvoerder
+app.get('/api/bewindvoerder/clients', authenticateToken, async (req, res) => {
+  try {
+    const user = (req as any).user;
+
+    if (user.type !== 'BEWINDVOERDER') {
+      return res.status(403).json({ error: 'Only bewindvoerders can access this' });
+    }
+
+    const relations = await prisma.clientBewindvoerderRelation.findMany({
+      where: { bewindvoerderId: user.id },
+      include: {
+        client: true
+      }
+    });
+
+    const clientsWithCounts = await Promise.all(
+      relations.map(async (relation) => {
+        const pendingDecisions = await prisma.decision.count({
+          where: { clientId: relation.clientId, status: 'PENDING' }
+        });
+        const pendingMoneyRequests = await prisma.moneyRequest.count({
+          where: { clientId: relation.clientId, status: 'PENDING' }
+        });
+
+        return {
+          id: relation.client.id,
+          firstName: relation.client.firstName,
+          lastName: relation.client.lastName,
+          email: relation.client.email,
+          pendingDecisions,
+          pendingMoneyRequests,
+          lastActivity: relation.client.updatedAt.toISOString()
+        };
+      })
+    );
+
+    res.json(clientsWithCounts);
+  } catch (error) {
+    console.error('[BEWINDVOERDER] Get clients error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get decisions for a client (bewindvoerder)
+app.get('/api/bewindvoerder/clients/:clientId/decisions', authenticateToken, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const { clientId } = req.params;
+
+    if (user.type !== 'BEWINDVOERDER') {
+      return res.status(403).json({ error: 'Only bewindvoerders can access this' });
+    }
+
+    // Verify relationship
+    const relation = await prisma.clientBewindvoerderRelation.findFirst({
+      where: { bewindvoerderId: user.id, clientId }
+    });
+
+    if (!relation) {
+      return res.status(403).json({ error: 'Not authorized for this client' });
+    }
+
+    const decisions = await prisma.decision.findMany({
+      where: { clientId },
+      include: { potje: true, reflection: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(decisions);
+  } catch (error) {
+    console.error('[BEWINDVOERDER] Get client decisions error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get money requests for a client (bewindvoerder)
+app.get('/api/bewindvoerder/clients/:clientId/money-requests', authenticateToken, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const { clientId } = req.params;
+
+    if (user.type !== 'BEWINDVOERDER') {
+      return res.status(403).json({ error: 'Only bewindvoerders can access this' });
+    }
+
+    // Verify relationship
+    const relation = await prisma.clientBewindvoerderRelation.findFirst({
+      where: { bewindvoerderId: user.id, clientId }
+    });
+
+    if (!relation) {
+      return res.status(403).json({ error: 'Not authorized for this client' });
+    }
+
+    const requests = await prisma.moneyRequest.findMany({
+      where: { clientId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(requests);
+  } catch (error) {
+    console.error('[BEWINDVOERDER] Get client money requests error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Approve decision (bewindvoerder)
+app.post('/api/bewindvoerder/decisions/:id/approve', authenticateToken, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (user.type !== 'BEWINDVOERDER') {
+      return res.status(403).json({ error: 'Only bewindvoerders can approve decisions' });
+    }
+
+    const decision = await prisma.decision.findUnique({
+      where: { id },
+      include: { client: true }
+    });
+
+    if (!decision) {
+      return res.status(404).json({ error: 'Decision not found' });
+    }
+
+    // Verify authorization by checking relation directly
+    const relation = await prisma.clientBewindvoerderRelation.findFirst({
+      where: {
+        clientId: decision.clientId,
+        bewindvoerderId: user.id
+      }
+    });
+
+    if (!relation) {
+      return res.status(403).json({ error: 'Not authorized to approve this decision' });
+    }
+
+    const updated = await prisma.decision.update({
+      where: { id },
+      data: {
+        status: 'APPROVED',
+        bewindvoerderMessage: message || null,
+        approvedAt: new Date()
+      },
+      include: { potje: true }
+    });
+
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        userId: decision.clientId,
+        type: 'decision_approved',
+        title: 'Keuze goedgekeurd',
+        message: `Je keuze "${decision.title}" is goedgekeurd door ${user.firstName}.`
+      }
+    });
+
+    console.log(`[BEWINDVOERDER] Decision approved: ${id} by ${user.email}`);
+    res.json(updated);
+  } catch (error) {
+    console.error('[BEWINDVOERDER] Approve decision error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Deny decision (bewindvoerder)
+app.post('/api/bewindvoerder/decisions/:id/deny', authenticateToken, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (user.type !== 'BEWINDVOERDER') {
+      return res.status(403).json({ error: 'Only bewindvoerders can deny decisions' });
+    }
+
+    const decision = await prisma.decision.findUnique({
+      where: { id },
+      include: { client: true }
+    });
+
+    if (!decision) {
+      return res.status(404).json({ error: 'Decision not found' });
+    }
+
+    // Verify authorization by checking relation directly
+    const relation = await prisma.clientBewindvoerderRelation.findFirst({
+      where: {
+        clientId: decision.clientId,
+        bewindvoerderId: user.id
+      }
+    });
+
+    if (!relation) {
+      return res.status(403).json({ error: 'Not authorized to deny this decision' });
+    }
+
+    const updated = await prisma.decision.update({
+      where: { id },
+      data: {
+        status: 'DENIED',
+        bewindvoerderMessage: message || null
+      },
+      include: { potje: true }
+    });
+
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        userId: decision.clientId,
+        type: 'decision_denied',
+        title: 'Keuze afgewezen',
+        message: message || `Je keuze "${decision.title}" is afgewezen.`
+      }
+    });
+
+    console.log(`[BEWINDVOERDER] Decision denied: ${id} by ${user.email}`);
+    res.json(updated);
+  } catch (error) {
+    console.error('[BEWINDVOERDER] Deny decision error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Approve money request (bewindvoerder)
+app.post('/api/bewindvoerder/money-requests/:id/approve', authenticateToken, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (user.type !== 'BEWINDVOERDER') {
+      return res.status(403).json({ error: 'Only bewindvoerders can approve money requests' });
+    }
+
+    const request = await prisma.moneyRequest.findUnique({
+      where: { id },
+      include: { client: true }
+    });
+
+    if (!request) {
+      return res.status(404).json({ error: 'Money request not found' });
+    }
+
+    // Verify authorization by checking relation directly
+    const relation = await prisma.clientBewindvoerderRelation.findFirst({
+      where: {
+        clientId: request.clientId,
+        bewindvoerderId: user.id
+      }
+    });
+
+    if (!relation) {
+      return res.status(403).json({ error: 'Not authorized to approve this request' });
+    }
+
+    const updated = await prisma.moneyRequest.update({
+      where: { id },
+      data: {
+        status: 'APPROVED',
+        bewindvoerderMessage: message || null
+      }
+    });
+
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        userId: request.clientId,
+        type: 'money_approved',
+        title: 'Geldverzoek goedgekeurd',
+        message: `Je geldverzoek van €${request.amount.toFixed(2)} is goedgekeurd.`
+      }
+    });
+
+    console.log(`[BEWINDVOERDER] Money request approved: ${id} by ${user.email}`);
+    res.json(updated);
+  } catch (error) {
+    console.error('[BEWINDVOERDER] Approve money request error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Deny money request (bewindvoerder)
+app.post('/api/bewindvoerder/money-requests/:id/deny', authenticateToken, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (user.type !== 'BEWINDVOERDER') {
+      return res.status(403).json({ error: 'Only bewindvoerders can deny money requests' });
+    }
+
+    const request = await prisma.moneyRequest.findUnique({
+      where: { id },
+      include: { client: true }
+    });
+
+    if (!request) {
+      return res.status(404).json({ error: 'Money request not found' });
+    }
+
+    // Verify authorization by checking relation directly
+    const relation = await prisma.clientBewindvoerderRelation.findFirst({
+      where: {
+        clientId: request.clientId,
+        bewindvoerderId: user.id
+      }
+    });
+
+    if (!relation) {
+      return res.status(403).json({ error: 'Not authorized to deny this request' });
+    }
+
+    const updated = await prisma.moneyRequest.update({
+      where: { id },
+      data: {
+        status: 'DENIED',
+        bewindvoerderMessage: message || null
+      }
+    });
+
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        userId: request.clientId,
+        type: 'money_denied',
+        title: 'Geldverzoek afgewezen',
+        message: message || `Je geldverzoek van €${request.amount.toFixed(2)} is afgewezen.`
+      }
+    });
+
+    console.log(`[BEWINDVOERDER] Money request denied: ${id} by ${user.email}`);
+    res.json(updated);
+  } catch (error) {
+    console.error('[BEWINDVOERDER] Deny money request error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ============================================
 // SEED DATA ENDPOINT (for development)
 // ============================================
 
